@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jennyferg.PomodoroCotopaxi"
     },
     "web": {
       "output": "server",
@@ -37,6 +38,17 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "555b2075-cacc-4b1b-85a6-bc85be2d00ae"
+      }
+    },
+    "owner": "jennyferg"
   }
 }
