@@ -14,6 +14,17 @@ type PomodoroTimerProps = {
   onComplete?: () => void;
 };
 
+export type PomodoroTimerController = {
+  visibleStatus: 'stopped' | 'running' | 'paused';
+  formattedTime: string;
+  start: () => void;
+  pause: () => void;
+  resume: () => void;
+  requestReset: () => void;
+  cancelReset: () => void;
+  confirmReset: () => void;
+};
+
 type TimerButtonProps = {
   label: 'Iniciar' | 'Pausar' | 'Reanudar' | 'Reiniciar';
   onPress: () => void;
@@ -42,7 +53,16 @@ export function PomodoroTimer({
   onComplete,
 }: PomodoroTimerProps) {
   const timer = useTimer({ durationMs, onComplete });
+  return <PomodoroTimerView timer={timer} />;
+}
 
+export function PomodoroTimerView({
+  timer,
+  onStart,
+}: {
+  timer: PomodoroTimerController;
+  onStart?: () => void;
+}) {
   const statusLabel = {
     stopped: 'Detenido',
     running: 'En ejecución',
@@ -77,7 +97,7 @@ export function PomodoroTimer({
 
       <View style={styles.controls}>
         {timer.visibleStatus === 'stopped' && (
-          <TimerButton label="Iniciar" onPress={timer.start} />
+          <TimerButton label="Iniciar" onPress={onStart ?? timer.start} />
         )}
         {timer.visibleStatus === 'running' && (
           <>

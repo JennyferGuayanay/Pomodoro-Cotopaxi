@@ -1,101 +1,87 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Alert, type AlertButton } from 'react-native';
 
+import { usePomodoroSession } from '@/hooks/use-pomodoro-session';
 import {
-  LONG_BREAK_DURATION_MS,
-  SHORT_BREAK_DURATION_MS,
-  STUDY_DURATION_MS,
-} from '@/features/pomodoro-cycle/pomodoro-cycle-state';
-import { createTimerState, formatRemainingTime } from '@/features/timer/timer-state';
-import { useTimer } from '@/hooks/use-timer';
+  getNotificationPermissionPromptStateAsync,
+  requestPomodoroNotificationPermissionAsync,
+} from '@/features/notifications/notification-permission';
 
 import { PomodoroCycle } from '../pomodoro-cycle';
 
-jest.mock('@/hooks/use-timer');
+jest.mock('@/features/notifications/notification-permission', () => ({
+  getNotificationPermissionPromptStateAsync: jest.fn(),
+  requestPomodoroNotificationPermissionAsync: jest.fn(),
+}));
 
-const mockUseTimer = jest.mocked(useTimer);
+jest.mock('@/hooks/use-pomodoro-session', () => ({
+  usePomodoroSession: jest.fn(),
+}));
+
+const mockUsePomodoroSession = jest.mocked(usePomodoroSession);
+const mockGetNotificationPermissionPromptStateAsync = jest.mocked(
+  getNotificationPermissionPromptStateAsync,
+);
+const mockRequestPomodoroNotificationPermissionAsync = jest.mocked(
+  requestPomodoroNotificationPermissionAsync,
+);
+
+const readySession = {
+  isReady: true,
+  cycle: {
+    phase: 'study' as const,
+    completedPomodoros: 0,
+    targetPomodoros: 4,
+  },
+  phaseName: 'Estudio',
+  progressLabel: 'Pomodoros completados: 0 de 4',
+  completedPhase: null,
+  timer: {
+    visibleStatus: 'stopped' as const,
+    formattedTime: '25:00',
+    start: jest.fn(),
+    pause: jest.fn(),
+    resume: jest.fn(),
+    requestReset: jest.fn(),
+    cancelReset: jest.fn(),
+    confirmReset: jest.fn(),
+  },
+};
 
 describe('<PomodoroCycle />', () => {
-  let completeCurrentPhase: (() => void) | undefined;
-  let currentDurationMs = 0;
-
   beforeEach(() => {
-    mockUseTimer.mockImplementation((options = {}) => {
-      currentDurationMs = options.durationMs ?? STUDY_DURATION_MS;
-      completeCurrentPhase = options.onComplete;
-
-      return {
-        state: createTimerState(currentDurationMs),
-        visibleStatus: 'stopped',
-        remainingMs: currentDurationMs,
-        formattedTime: formatRemainingTime(currentDurationMs),
-        start: jest.fn(),
-        pause: jest.fn(),
-        resume: jest.fn(),
-        requestReset: jest.fn(),
-        cancelReset: jest.fn(),
-        confirmReset: jest.fn(),
-      };
-    });
+    jest.spyOn(Alert, 'alert').mockImplementation();
+    mockUsePomodoroSession.mockReturnValue(readySession);
+    mockGetNotificationPermissionPromptStateAsync.mockResolvedValue(
+      'notRequired',
+    );
+    mockRequestPomodoroNotificationPermissionAsync.mockResolvedValue(true);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
-  async function completePhase() {
-    if (!completeCurrentPhase) throw new Error('Expected a phase completion callback');
-    await act(() => completeCurrentPhase?.());
-  }
-
-  test('shows the accessible initial study phase and reuses the start control', async () => {
+  test('shows the accessible recovered phase and timer controls', async () => {
     await render(<PomodoroCycle />);
 
     expect(screen.getByLabelText('Fase actual: Estudio')).toBeOnTheScreen();
     expect(screen.getByLabelText('Pomodoros completados: 0 de 4')).toBeOnTheScreen();
     expect(screen.getByLabelText('Tiempo restante: 25:00')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Iniciar' })).toBeOnTheScreen();
-    expect(currentDurationMs).toBe(STUDY_DURATION_MS);
   });
 
-  test('alternates short breaks and reaches the long break with four of four', async () => {
+  test('does not render a provisional timer before recovery finishes', async () => {
+    mockUsePomodoroSession.mockReturnValue({
+      ...readySession,
+      isReady: false,
+    });
+
     await render(<PomodoroCycle />);
 
-    await completePhase();
-    expect(screen.getByLabelText('Fase actual: Descanso corto')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Pomodoros completados: 1 de 4')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Tiempo restante: 05:00')).toBeOnTheScreen();
-    expect(currentDurationMs).toBe(SHORT_BREAK_DURATION_MS);
-
-    await completePhase();
-    expect(screen.getByLabelText('Fase actual: Estudio')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Pomodoros completados: 1 de 4')).toBeOnTheScreen();
-
-    for (let completed = 2; completed <= 4; completed += 1) {
-      await completePhase();
-      if (completed < 4) await completePhase();
-    }
-
-    expect(screen.getByLabelText('Fase actual: Descanso largo')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Pomodoros completados: 4 de 4')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Tiempo restante: 15:00')).toBeOnTheScreen();
-    expect(currentDurationMs).toBe(LONG_BREAK_DURATION_MS);
-    expect(screen.getByRole('button', { name: 'Iniciar' })).toBeOnTheScreen();
-  });
-
-  test('resets progress only after the long break completes', async () => {
-    await render(<PomodoroCycle />);
-
-    for (let completed = 1; completed <= 4; completed += 1) {
-      await completePhase();
-      if (completed < 4) await completePhase();
-    }
-
-    expect(screen.getByLabelText('Pomodoros completados: 4 de 4')).toBeOnTheScreen();
-
-    await completePhase();
-    expect(screen.getByLabelText('Fase actual: Estudio')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Pomodoros completados: 0 de 4')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Tiempo restante: 25:00')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText(/Tiempo restante/)).not.toBeOnTheScreen();
   });
 
   test('does not expose controls to skip or select phases', async () => {
@@ -104,5 +90,97 @@ describe('<PomodoroCycle />', () => {
     expect(screen.queryByRole('button', { name: /omitir/i })).not.toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /descanso/i })).not.toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /estudio/i })).not.toBeOnTheScreen();
+  });
+
+  test('shows an accessible completion message and the next prepared phase', async () => {
+    mockUsePomodoroSession.mockReturnValue({
+      ...readySession,
+      cycle: {
+        phase: 'shortBreak',
+        completedPomodoros: 1,
+        targetPomodoros: 4,
+      },
+      phaseName: 'Descanso corto',
+      progressLabel: 'Pomodoros completados: 1 de 4',
+      completedPhase: 'study',
+    });
+    await render(<PomodoroCycle />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Estudio terminado. Es momento de descansar.',
+    );
+    expect(screen.getByLabelText('Fase actual: Descanso corto')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Iniciar' })).toBeOnTheScreen();
+    expect(readySession.timer.start).not.toHaveBeenCalled();
+  });
+
+  test('explains the notification purpose before requesting permission', async () => {
+    mockGetNotificationPermissionPromptStateAsync.mockResolvedValue(
+      'requestable',
+    );
+    await render(<PomodoroCycle />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Iniciar' }));
+    });
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Permitir notificaciones',
+      expect.stringContaining('puedes seguir usando el temporizador'),
+      expect.arrayContaining([
+        expect.objectContaining({ text: 'Ahora no' }),
+        expect.objectContaining({ text: 'Continuar' }),
+      ]),
+      { cancelable: false },
+    );
+    expect(readySession.timer.start).not.toHaveBeenCalled();
+    expect(mockRequestPomodoroNotificationPermissionAsync).not.toHaveBeenCalled();
+
+    const buttons = jest.mocked(Alert.alert).mock.calls[0]?.[2];
+    if (!buttons) throw new Error('Expected permission explanation buttons.');
+    const continueButton = buttons.find(({ text }) => text === 'Continuar');
+    if (!continueButton) throw new Error('Expected a permission request button.');
+    mockRequestPomodoroNotificationPermissionAsync.mockResolvedValue(false);
+
+    await act(async () => {
+      continueButton.onPress?.();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRequestPomodoroNotificationPermissionAsync).toHaveBeenCalledTimes(1);
+    expect(readySession.timer.start).toHaveBeenCalledTimes(1);
+  });
+
+  test('starts the Pomodoro without requesting permission when the user declines the rationale', async () => {
+    mockGetNotificationPermissionPromptStateAsync.mockResolvedValue(
+      'requestable',
+    );
+    await render(<PomodoroCycle />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Iniciar' }));
+    });
+
+    const buttons: AlertButton[] = jest.mocked(Alert.alert).mock.calls[0]?.[2] ?? [];
+    const declineButton = buttons.find(({ text }) => text === 'Ahora no');
+    if (!declineButton) throw new Error('Expected a decline button.');
+
+    await act(async () => declineButton.onPress?.());
+
+    expect(mockRequestPomodoroNotificationPermissionAsync).not.toHaveBeenCalled();
+    expect(readySession.timer.start).toHaveBeenCalledTimes(1);
+  });
+
+  test('starts normally when runtime notification permission is not required', async () => {
+    await render(<PomodoroCycle />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Iniciar' }));
+    });
+
+    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(mockRequestPomodoroNotificationPermissionAsync).not.toHaveBeenCalled();
+    expect(readySession.timer.start).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,28 +1,27 @@
-export const DEFAULT_STUDY_DURATION_MS = 25 * 60 * 1000;
-
+export const DEFAULT_STUDY_DURATION_MS = 25 * 60 * 1000; 
 type StoppedTimerState = {
-  status: 'stopped';
+  status: "stopped";
   durationMs: number;
   remainingMs: number;
 };
 
 type RunningTimerState = {
-  status: 'running';
+  status: "running";
   durationMs: number;
   endsAtMs: number;
 };
 
 type PausedTimerState = {
-  status: 'paused';
+  status: "paused";
   durationMs: number;
   remainingMs: number;
 };
 
 type ConfirmingResetTimerState = {
-  status: 'confirmingReset';
+  status: "confirmingReset";
   durationMs: number;
   remainingMs: number;
-  previousStatus: 'running' | 'paused';
+  previousStatus: "running" | "paused";
 };
 
 export type TimerState =
@@ -32,26 +31,26 @@ export type TimerState =
   | ConfirmingResetTimerState;
 
 export type TimerEvent =
-  | { type: 'start' }
-  | { type: 'pause' }
-  | { type: 'resume' }
-  | { type: 'requestReset' }
-  | { type: 'cancelReset' }
-  | { type: 'confirmReset' }
-  | { type: 'tick' };
+  | { type: "start" }
+  | { type: "pause" }
+  | { type: "resume" }
+  | { type: "requestReset" }
+  | { type: "cancelReset" }
+  | { type: "confirmReset" }
+  | { type: "tick" };
 
 export function createTimerState(
   durationMs = DEFAULT_STUDY_DURATION_MS,
 ): TimerState {
   return {
-    status: 'stopped',
+    status: "stopped",
     durationMs,
     remainingMs: durationMs,
   };
 }
 
 export function getRemainingMs(state: TimerState, nowMs: number): number {
-  if (state.status === 'running') {
+  if (state.status === "running") {
     return Math.max(0, state.endsAtMs - nowMs);
   }
 
@@ -64,62 +63,63 @@ export function transitionTimer(
   nowMs: number,
 ): TimerState {
   switch (event.type) {
-    case 'start':
-      if (state.status !== 'stopped') return state;
+    case "start":
+      if (state.status !== "stopped") return state;
       return {
-        status: 'running',
+        status: "running",
         durationMs: state.durationMs,
         endsAtMs: nowMs + state.durationMs,
       };
 
-    case 'pause':
-      if (state.status !== 'running') return state;
+    case "pause":
+      if (state.status !== "running") return state;
       return {
-        status: 'paused',
+        status: "paused",
         durationMs: state.durationMs,
         remainingMs: getRemainingMs(state, nowMs),
       };
 
-    case 'resume':
-      if (state.status !== 'paused') return state;
+    case "resume":
+      if (state.status !== "paused") return state;
       return {
-        status: 'running',
+        status: "running",
         durationMs: state.durationMs,
         endsAtMs: nowMs + state.remainingMs,
       };
 
-    case 'requestReset':
-      if (state.status !== 'running' && state.status !== 'paused') return state;
+    case "requestReset":
+      if (state.status !== "running" && state.status !== "paused") return state;
       return {
-        status: 'confirmingReset',
+        status: "confirmingReset",
         durationMs: state.durationMs,
         remainingMs: getRemainingMs(state, nowMs),
         previousStatus: state.status,
       };
 
-    case 'cancelReset':
-      if (state.status !== 'confirmingReset') return state;
-      if (state.previousStatus === 'running') {
+    case "cancelReset":
+      if (state.status !== "confirmingReset") return state;
+      if (state.previousStatus === "running") {
         return {
-          status: 'running',
+          status: "running",
           durationMs: state.durationMs,
           endsAtMs: nowMs + state.remainingMs,
         };
       }
       return {
-        status: 'paused',
+        status: "paused",
         durationMs: state.durationMs,
         remainingMs: state.remainingMs,
       };
 
-    case 'confirmReset':
-      if (state.status !== 'confirmingReset') return state;
+    case "confirmReset":
+      if (state.status !== "confirmingReset") return state;
       return createTimerState(state.durationMs);
 
-    case 'tick':
-      if (state.status !== 'running' || getRemainingMs(state, nowMs) > 0) return state;
+    case "tick":
+      if (state.status !== "running" || getRemainingMs(state, nowMs) > 0)
+        return state;
       return {
-        status: 'stopped',
+        status: "stopped",
         durationMs: state.durationMs,
         remainingMs: 0,
       };
@@ -131,5 +131,5 @@ export function formatRemainingTime(remainingMs: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
