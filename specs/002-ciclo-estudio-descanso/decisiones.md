@@ -42,7 +42,7 @@ La especificación debe añadir esos conceptos sin cambiar el funcionamiento apr
 - **Estado:** Aprobada.
 - **Contexto:** El tipo de descanso depende del progreso del ciclo.
 - **Requisitos relacionados:** SPEC-002-R04-R07.
-- **Decisión:** Un estudio completado prepara un descanso corto si todavía no alcanza la cantidad requerida; si la alcanza, prepara un descanso largo. HU-002 usa cuatro Pomodoros y su configuración se realizará posteriormente en HU-005.
+- **Decisión:** Un estudio completado prepara un descanso corto si todavía no alcanza la cantidad requerida; si la alcanza, prepara un descanso largo. La cantidad predeterminada es cuatro Pomodoros y HU-005 permite configurar otro entero positivo.
 - **Consecuencias:** La selección depende del número de estudios completados, no del número de descansos ni de las acciones de control del temporizador. HU-002 no incorpora una interfaz para cambiar la cantidad.
 
 ### DEC-004: Reinicio del contador del ciclo
@@ -51,7 +51,7 @@ La especificación debe añadir esos conceptos sin cambiar el funcionamiento apr
 - **Contexto:** El requisito original ordena reiniciar el contador al completar la cantidad requerida y la aclaración define el momento observable del reinicio.
 - **Requisitos relacionados:** SPEC-002-R07 y SPEC-002-R10.
 - **Decisión:** Al preparar el descanso largo, conservar el contador en `N de N` durante todo ese descanso. Cuando el descanso largo termine, reiniciar el contador a `0 de N` y preparar el estudio del siguiente ciclo.
-- **Consecuencias:** Con cuatro Pomodoros, la pantalla muestra `Pomodoros completados: 4 de 4` durante el descanso largo y `Pomodoros completados: 0 de 4` al preparar el siguiente estudio.
+- **Consecuencias:** Con el valor predeterminado, la pantalla muestra `Pomodoros completados: 4 de 4` durante el descanso largo y `Pomodoros completados: 0 de 4` al preparar el siguiente estudio. Con otra cantidad vigente muestra `N de N` y comienza el nuevo ciclo con la cantidad entonces configurada.
 
 ### DEC-005: Estudio después de cualquier descanso
 
@@ -93,7 +93,7 @@ La especificación debe añadir esos conceptos sin cambiar el funcionamiento apr
 - **Estado:** Aprobada.
 - **Contexto:** HU-005 permitirá configurar la cantidad requerida después de implementar HU-002.
 - **Opciones consideradas:** Aplicar el cambio inmediatamente; aplicarlo al ciclo siguiente.
-- **Decisión:** Una cantidad modificada durante un ciclo se aplicará al ciclo siguiente, después de terminar el descanso largo actual.
+- **Decisión:** Una cantidad modificada durante un ciclo se aplicará al ciclo siguiente, después de terminar el descanso largo actual. El ciclo en curso conserva la cantidad que tenía al comenzar.
 - **Consecuencias:** El límite del ciclo en curso permanece estable y no se generan estados donde el progreso supere inesperadamente una cantidad nueva.
 
 ### DEC-010: Estado inicial
@@ -101,7 +101,7 @@ La especificación debe añadir esos conceptos sin cambiar el funcionamiento apr
 - **Estado:** Aprobada.
 - **Contexto:** La aplicación necesita una primera fase observable cuando no existe progreso recuperado por HU-003.
 - **Opciones consideradas:** Estudio con cero; descanso; otro estado inicial.
-- **Decisión:** Preparar `Estudio` con `Pomodoros completados: 0 de 4` y esperar el inicio manual.
+- **Decisión:** Preparar `Estudio` con `Pomodoros completados: 0 de N`, donde N es la cantidad recuperada/configurada o cuatro si no existe una cantidad utilizable, y esperar el inicio manual.
 - **Consecuencias:** El primer uso comienza con una fase coherente con el temporizador de estudio aprobado en HU-001.
 
 ### DEC-011: Duraciones provisionales
@@ -124,7 +124,7 @@ La especificación debe añadir esos conceptos sin cambiar el funcionamiento apr
 
 | Pregunta | Resolución | Decisión relacionada |
 | --- | --- | --- |
-| PEND-001 | Usar cuatro; configurar la cantidad posteriormente en HU-005 | DEC-003 |
+| PEND-001 | Usar cuatro como predeterminado; permitir configurar otro entero positivo en HU-005 | DEC-003, DEC-009 |
 | PEND-002 | Aplicar un cambio al siguiente ciclo | DEC-009 |
 | PEND-003 | Iniciar en `Estudio` con cero Pomodoros | DEC-010 |
 | PEND-004 | Usar provisionalmente 25, 5 y 15 minutos | DEC-011 |
@@ -135,9 +135,15 @@ La especificación debe añadir esos conceptos sin cambiar el funcionamiento apr
 
 ## Cierre
 
-- PEND-001 a PEND-008 están resueltas y trazadas a decisiones.
+- PEND-001 a PEND-008 están resueltas y trazadas a decisiones. La integración configurable con valor predeterminado cuatro se confirmó explícitamente el 2026-10-20.
 - Los requisitos y criterios de `spec.md` incorporan las ocho respuestas.
 - No quedan decisiones funcionales abiertas en el alcance actual.
 - La especificación y estas decisiones fueron aprobadas explícitamente el 2026-10-19.
 - La planificación está autorizada.
 - La implementación requiere aprobación separada de `plan.md` y `tasks.md`.
+
+## Enmienda de tamaño configurable
+
+- **Estado:** Aprobada explícitamente por el responsable el 2026-10-20.
+- **Decisión:** HU-005 puede cambiar el tamaño del ciclo a cualquier entero positivo; cuatro permanece como valor predeterminado. El ciclo en curso conserva su tamaño y el nuevo valor se aplica tras finalizar su descanso largo.
+- **Alcance:** Se actualiza la especificación y la historia HU-002. No se alteran su transición, el inicio manual ni el comportamiento predeterminado implementado.
