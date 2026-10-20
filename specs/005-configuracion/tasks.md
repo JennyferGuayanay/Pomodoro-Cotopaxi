@@ -2,14 +2,14 @@
 
 ## Estado y puerta de ejecución
 
-**Aprobadas explícitamente el 2026-10-20 por el responsable del producto.** HU005-PRE-01 y HU005-PRE-02 están completadas y revisadas. La implementación está autorizada secuencialmente, comenzando por HU005-T01.
+**Aprobadas explícitamente el 2026-10-20 por el responsable del producto.** HU005-PRE-01 y HU005-PRE-02 están completadas y revisadas. La implementación está autorizada secuencialmente según las dependencias; HU005-T01–T04 están implementadas y verificadas, y HU005-T05 no se ha iniciado.
 
 - Historia: `docs/historias/HU-005.md` (aprobada el 2026-10-20).
 - Especificación: `spec.md` (aprobada el 2026-10-20).
 - Plan: `plan.md` (aprobado el 2026-10-20).
 - Decisiones funcionales pendientes: Ninguna identificada.
 - Tareas de implementación aprobadas: HU005-T01–T05, en el orden y con las dependencias definidos aquí.
-- Autorización para ejecutar HU005-T01: Sí; es la siguiente tarea y está lista para comenzar.
+- Autorización para ejecutar HU005-T04: Sí; tarea implementada y verificada tras completar HU005-T01–T03.
 - Autorización de tareas posteriores: Secuencial, al completarse y verificarse sus dependencias.
 
 ## Precondiciones comunes
@@ -40,7 +40,7 @@
 
 ### HU005-T01 — Implementar modelo y validación de configuración
 
-- **Estado:** Aprobada y autorizada para comenzar; no iniciada.
+- **Estado:** Implementada y verificada el 2026-10-20.
 - **Requisitos:** HU-005-R01–R05.
 - **Criterios:** HU-005-CA01–CA03.
 - **Áreas previstas:** dominio de `src/features/`; ubicaciones exactas por confirmar durante la tarea.
@@ -52,10 +52,19 @@
   4. Devolver información suficiente para identificar cada campo inválido sin reemplazar datos válidos.
 - **Pruebas/evidencia:** predeterminados; campos positivos válidos; cero, negativos, decimales, vacíos y no enteros rechazados; validación atómica de todos los campos.
 - **Hecho cuando:** modelo, valores predeterminados y validador cumplen R01–R05 y cada regla tiene prueba determinista.
+- **Evidencia ejecutada:**
+
+| Tarea | Requisitos | Entorno | Comando o procedimiento | Resultado | Evidencia pendiente |
+| --- | --- | --- | --- | --- | --- |
+| HU005-T01 | HU-005-R01–R05; HU-005-CA01–CA03 | Windows; Jest del proyecto | `npm test -- --runInBand` | Aprobado: 13 suites y 132 pruebas pasaron. | Ninguna para el modelo y la validación de T01. |
+| HU005-T01 | HU-005-R01–R05 | Windows; TypeScript del proyecto | `npx tsc --noEmit` | Aprobado: sin errores de tipos. | Ninguna. |
+| HU005-T01 | Verificación de calidad del proyecto | Windows; Expo lint | `npx expo lint` | Fallido por un error preexistente `react-hooks/set-state-in-effect` en `src/hooks/use-color-scheme.web.ts:11`; archivo fuera del alcance y sin cambios. | Corregir el error preexistente en una tarea autorizada por separado. |
+
+Las pruebas automatizadas cubren valores predeterminados, conjuntos positivos, todos los campos con valores cero/negativos/decimales/vacíos/no numéricos/ausentes, entrada no objeto, reporte acumulado de campos inválidos y ausencia de un máximo no aprobado. No se realizaron pruebas manuales porque T01 solo implementa lógica pura de dominio.
 
 ### HU005-T02 — Persistir y recuperar configuración local
 
-- **Estado:** Aprobada; autorizada para ejecución secuencial tras completar HU005-T01; no iniciada.
+- **Estado:** Implementada y verificada el 2026-10-20.
 - **Requisitos:** HU-005-R03, R06–R09, R15–R16.
 - **Criterios:** HU-005-CA01–CA02, CA08–CA11.
 - **Áreas previstas:** `src/features/persistence/`; usar almacenamiento local ya existente sujeto a verificación.
@@ -68,10 +77,18 @@
   5. Evitar modificar o invalidar la persistencia de sesión HU-003.
 - **Pruebas/evidencia:** ausencia de registro, lectura de configuración válida, registros dañados/incompletos/incompatibles, falla de lectura/escritura simulada, persistencia offline.
 - **Hecho cuando:** CA01–CA02 y CA08–CA11 se verifican y los errores no bloquean ni producen reemplazo parcial.
+- **Evidencia ejecutada:**
+
+| Tarea | Requisitos | Entorno | Comando o procedimiento | Resultado | Evidencia pendiente |
+| --- | --- | --- | --- | --- | --- |
+| HU005-T02 | HU-005-R03, R06–R09, R15; HU-005-CA01–CA02, CA08–CA10 | Windows; Jest del proyecto | `npm test -- --runInBand` | Aprobado: 14 suites y 142 pruebas pasaron; incluye ausencia, registro válido/corrupto/incompleto/incompatible, fallos simulados y conservación del registro anterior. | Verificación Android en modo avión, prevista para HU005-T05. |
+| HU005-T02 | HU-005-R03, R06–R09, R15 | Windows; TypeScript del proyecto | `npx tsc --noEmit` | Aprobado: sin errores de tipos. | Ninguna. |
+
+La persistencia utiliza una clave AsyncStorage independiente del estado de sesión HU-003. Los errores se devuelven explícitamente y los fallos de lectura/escritura muestran un aviso no bloqueante; los controles de edición y los errores de validación por campo forman parte de HU005-T04. La operación es local y no invoca red; la prueba manual de modo avión queda para HU005-T05.
 
 ### HU005-T03 — Aplicar configuración a fases y ciclos
 
-- **Estado:** Aprobada; autorizada para ejecución secuencial tras completar HU005-T01 y HU005-T02; no iniciada.
+- **Estado:** Implementada y verificada el 2026-10-20.
 - **Requisitos:** HU-005-R10–R13.
 - **Criterios:** HU-005-CA04–CA06.
 - **Áreas previstas:** `src/features/timer/`, `src/features/pomodoro-cycle/` y `src/hooks/use-pomodoro-session.ts`.
@@ -83,13 +100,23 @@
   4. Conservar el formato y recuperación de sesión HU-003 salvo cambio aprobado y probado.
 - **Pruebas/evidencia:** reloj controlado para fase preparada/activa/pausada; transición con duración nueva; límite de ciclo durante cambio de objetivo; fase siguiente detenida y regresión HU-001/HU-002.
 - **Hecho cuando:** CA04–CA06 pasan y el ciclo con valor predeterminado 4 conserva comportamiento previo.
+- **Evidencia ejecutada:**
+
+| Tarea | Requisitos | Entorno | Comando o procedimiento | Resultado | Evidencia pendiente |
+| --- | --- | --- | --- | --- | --- |
+| HU005-T03 | HU-005-R10–R13; HU-005-CA04–CA06 | Windows; Jest del proyecto | `npm test -- --runInBand` | Aprobado: 15 suites y 150 pruebas pasaron; incluye fase preparada/en ejecución/pausada, nuevas duraciones en la fase posterior y nuevo objetivo después del descanso largo. | Validación manual Android y modo avión, prevista para HU005-T05. |
+| HU005-T03 | HU-005-R10–R13 | Windows; TypeScript del proyecto | `npx tsc --noEmit` | Aprobado: sin errores de tipos. | Ninguna. |
+| HU005-T03 | Calidad de archivos modificados | Windows; ESLint focalizado | `npx eslint` sobre los archivos TS/TSX modificados | Aprobado: sin errores en los archivos de T02/T03. | Ninguna para archivos modificados. |
+| HU005-T03 | Calidad general del proyecto | Windows; Expo lint | `npx expo lint` | Fallido por el error preexistente `react-hooks/set-state-in-effect` en `src/hooks/use-color-scheme.web.ts:11`; fuera del alcance y sin cambios. | Resolver en una tarea separada autorizada. |
+
+La configuración se comparte desde el proveedor de la aplicación y se persiste en una clave distinta a la sesión HU-003. Guardar no modifica el temporizador ni el objetivo del ciclo vigente; la configuración se consulta al preparar fases posteriores y al iniciar el ciclo siguiente al descanso largo. Se mantiene el inicio manual de cada fase. Los errores de lectura y escritura muestran avisos y no bloquean el temporizador.
 
 ### HU005-T04 — Añadir controles de configuración y restauración
 
-- **Estado:** Aprobada; autorizada para ejecución secuencial tras completar HU005-T01–T03; no iniciada.
+- **Estado:** Implementada y verificada el 2026-10-20.
 - **Requisitos:** HU-005-R01–R05, R09, R14 y R15.
 - **Criterios:** HU-005-CA03, CA07, CA09 y CA10.
-- **Áreas previstas:** nueva pantalla/ruta y controles en la estructura actual de Expo Router; ubicaciones por confirmar.
+- **Áreas:** `src/app/settings.tsx`, acceso desde `src/app/index.tsx`, registro de navegación en `src/components/app-tabs.tsx` y `src/components/app-tabs.web.tsx`, pantalla en `src/features/configuration/pomodoro-configuration-screen.tsx` y pruebas asociadas. Reutiliza el proveedor y almacenamiento existentes sin modificarlos.
 - **Depende de:** HU005-T01–T03 y aprobación/autorización común.
 - **Pasos:**
   1. Permitir editar los cuatro valores incluidos en el alcance.
@@ -98,6 +125,16 @@
   4. Presentar mensajes claros de error de lectura/escritura sin bloquear la aplicación y preservar el comportamiento de fallback/conservación aprobado.
 - **Pruebas/evidencia:** entradas válidas/inválidas, accesibilidad de errores, confirmación/cancelación, guardado, errores de lectura/escritura y navegación.
 - **Hecho cuando:** se pueden editar y restaurar los cuatro valores según la especificación, se presentan claramente los errores de almacenamiento y las pruebas de interacción pasan.
+- **Evidencia ejecutada:**
+
+| Tarea | Requisitos | Entorno | Comando o procedimiento | Resultado | Evidencia pendiente |
+| --- | --- | --- | --- | --- | --- |
+| HU005-T04 | HU-005-R01–R05, R09, R14–R15; HU-005-CA03, CA07, CA09–CA10 | Windows; Jest del proyecto | `npm test -- --runInBand` | Aprobado: 17 suites y 157 pruebas pasaron; incluye 7 pruebas nuevas para pantalla, validación, guardado, restauración, errores y acceso desde Inicio. | Validación manual de navegación y accesibilidad en Android, prevista para HU005-T05. |
+| HU005-T04 | HU-005-R01–R05, R09, R14–R15 | Windows; TypeScript del proyecto | `npx tsc --noEmit` | Aprobado: sin errores de tipos. | Ninguna. |
+| HU005-T04 | Calidad de los archivos modificados por T04 | Windows; ESLint focalizado | `npx eslint` sobre los archivos TS/TSX de la pantalla y navegación de T04 | Aprobado: sin errores ni advertencias en los archivos comprobados. | Ninguna para los archivos de T04. |
+| HU005-T04 | Calidad general del proyecto | Windows; Expo lint | `npx expo lint` | Fallido por el error preexistente `react-hooks/set-state-in-effect` en `src/hooks/use-color-scheme.web.ts:11`; fuera del alcance y sin cambios. | Resolver en una tarea separada autorizada. |
+
+Las pruebas automatizadas verifican la representación de valores persistidos y predeterminados, el rechazo accesible de varios campos inválidos sin persistencia, el guardado válido, la confirmación de restauración, el aviso de error de lectura, el error de escritura y el acceso de Inicio a `/settings`. Las validaciones manuales Android/offline quedan para HU005-T05; T05 no se inició.
 
 ### HU005-T05 — Verificar regresión y operación móvil/offline
 
@@ -123,5 +160,4 @@ HU005-T01 precede a HU005-T02; HU005-T03 depende de T01 y T02; HU005-T04 depende
 - HU-005 y enmienda de HU-002 aprobadas: Sí, explícitamente el 2026-10-20.
 - Especificación aprobada: Sí, explícitamente el 2026-10-20.
 - Plan y tareas aprobados: Sí, explícitamente el 2026-10-20.
-- HU005-T01 autorizada para comenzar: Sí.
-- Implementación iniciada: No.
+- Estado de implementación: HU005-T01–T04 implementadas y verificadas; HU005-T05 pendiente y no iniciada.

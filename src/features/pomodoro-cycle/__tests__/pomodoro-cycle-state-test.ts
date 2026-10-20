@@ -28,6 +28,25 @@ describe('pomodoro cycle state', () => {
     expect(getPomodoroPhaseDurationMs(phase)).toBe(durationMs);
   });
 
+  test('uses configured phase durations when preparing a phase', () => {
+    const configuration = {
+      studyDurationMinutes: 30,
+      shortBreakDurationMinutes: 7,
+      longBreakDurationMinutes: 20,
+      pomodorosPerCycle: 6,
+    };
+
+    expect(getPomodoroPhaseDurationMs('study', configuration)).toBe(
+      30 * 60 * 1000,
+    );
+    expect(getPomodoroPhaseDurationMs('shortBreak', configuration)).toBe(
+      7 * 60 * 1000,
+    );
+    expect(getPomodoroPhaseDurationMs('longBreak', configuration)).toBe(
+      20 * 60 * 1000,
+    );
+  });
+
   test.each([
     ['study', 'Estudio'],
     ['shortBreak', 'Descanso corto'],

@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Aprobación parcial.** Las decisiones de alcance inicial que siguen están autorizadas para la primera implementación. La especificación completa y HU-004 no están aprobadas ni completadas: el requisito original de alarma incluso con el teléfono en silencio y de aviso en pantalla de bloqueo requiere validación técnica adicional.
+**Aprobación parcial.** Las decisiones de alcance inicial que siguen están autorizadas para la primera implementación. La especificación completa y HU-004 no están aprobadas ni completadas: el requisito original de alarma incluso con el teléfono en silencio y de aviso en pantalla de bloqueo requiere validación técnica adicional. El 2026-10-20 se autorizó implementar un canal nuevo con sonido normal del sistema y vibración, sin permisos especiales; esto no resuelve sonido en silencio ni No molestar.
 
 - Historia de origen: `docs/historias/HU-004.md`.
 - Especificación asociada: `specs/004-notificaciones-alarmas/spec.md`.
@@ -102,6 +102,27 @@
 - **Opciones consideradas:** Esperar a resolver P01 antes de cualquier implementación; o autorizar de forma acotada las tareas definidas del alcance ordinario y mantener P01 como puerta independiente.
 - **Decisión:** Autorizar HU004-T01–T07 para implementación independiente, una tarea a la vez y con pruebas según `tasks.md`: integración de `expo-notifications`, explicación/solicitud de permisos, canal Android con sonido predeterminado y vibración, programación local, respuesta al aviso, cancelación/reprogramación y validación del alcance parcial. Cada tarea se inicia mediante solicitud explícita del responsable. HU004-T01 es la primera tarea autorizada y requiere `expo-notifications` compatible con Expo SDK 58.
 - **Consecuencias:** Esta autorización no instala dependencias ni inicia tareas por sí sola; tampoco aprueba globalmente `spec.md` ni cambia el estado de HU-004. HU004-T08 y cualquier implementación destinada a satisfacer P01 requieren investigación técnica, decisión y autorización específicas posteriores. No eliminar ni reducir P01 o sus criterios de aceptación.
+- **Documentos afectados:** `spec.md`, `plan.md` y `tasks.md`.
+
+### DEC-004-11: Canal versionado con sonido normal del sistema
+
+- **Estado:** Autorizada explícitamente por el responsable para implementación parcial el 2026-10-20; no aprueba el cumplimiento completo de SPEC-004-P01.
+- **Contexto y requisito:** El canal anterior `pomodoro-phase-end` se configuró con `sound: null` y Android conserva la configuración de comportamiento de un canal ya creado. La solución parcial debe emitir el sonido normal de notificación y vibrar sin tratar el sonido predeterminado como recurso personalizado.
+- **Opciones consideradas:** Mantener el canal silencioso; pasar `sound: 'default'`; omitir la propiedad `sound` y crear un canal con ID nuevo.
+- **Decisión:** Crear el canal `pomodoro-phase-end-v2`, mantener `enableVibrate: true` y omitir `sound`. La versión instalada de `expo-notifications` interpreta la omisión como URI de sonido predeterminado del sistema; `sound: null` significa explícitamente sin sonido, y los nombres se resuelven como recursos personalizados.
+- **Responsable:** Responsable del producto mediante instrucción explícita del 2026-10-20.
+- **Consecuencias:** Las notificaciones nuevas usan el canal versionado. El canal anterior puede permanecer visible en ajustes Android, pero ya no es el canal usado por la aplicación. No se añade permiso especial, archivo de sonido ni dependencia.
+- **Limitaciones no aprobadas:** Android y el usuario pueden silenciar el canal. La aplicación no garantiza ni debe declarar aprobado sonido en modo silencio o No molestar; la visibilidad en pantalla bloqueada también depende del sistema y de la privacidad configurada.
+- **Documentos afectados:** `docs/historias/HU-004.md`, `spec.md`, `plan.md` y `tasks.md`.
+
+### DEC-004-12: Registro de resultados físicos de HU-004
+
+- **Estado:** Evidencia de prueba registrada; no cambia la aprobación parcial ni resuelve DEC-004-09.
+- **Contexto y requisitos:** El responsable comunicó los resultados de pruebas manuales de fin de fase en un celular Android físico el 2026-10-20; se necesita separar resultados observados de garantías generales y del requisito de sonido/vibración en silencio (SPEC-004-P01/CA09).
+- **Opciones consideradas:** Marcar el requisito original completo como aprobado por haber aparecido el aviso en pantalla bloqueada; o registrar cada señal y condición por separado, dejando el requisito combinado pendiente.
+- **Decisión:** Registrar como observación aprobada únicamente para esa ejecución que, en modo normal, la notificación apareció en la pantalla bloqueada, sonó y vibró; y que, en modo silencio, apareció la notificación, sin sonido ni vibración. No se informó si el aviso en modo silencio apareció específicamente en la pantalla bloqueada. No marcar como probados escenarios no informados.
+- **Consecuencias:** La entrega visual en pantalla bloqueada tiene evidencia positiva limitada a un dispositivo en modo normal. La alarma audible y la vibración en modo silencio no pasaron; SPEC-004-P01/CA09 y HU004-T08 siguen pendientes. No se cambian permisos, canal, configuración ni comportamiento de código. No se proporcionaron modelo, versión de Android, build ni datos detallados de permisos; no se infieren.
+- **Responsable:** Responsable del producto mediante resultados explícitos comunicados el 2026-10-20.
 - **Documentos afectados:** `spec.md`, `plan.md` y `tasks.md`.
 
 ## Fuentes técnicas de referencia

@@ -1,7 +1,15 @@
+import {
+  DEFAULT_POMODORO_CONFIGURATION,
+  type PomodoroConfiguration,
+} from '@/features/configuration/pomodoro-configuration';
+
 export const DEFAULT_TARGET_POMODOROS = 4;
-export const STUDY_DURATION_MS = 25 * 60 * 1000;
-export const SHORT_BREAK_DURATION_MS = 5 * 60 * 1000;
-export const LONG_BREAK_DURATION_MS = 15 * 60 * 1000;
+export const STUDY_DURATION_MS =
+  DEFAULT_POMODORO_CONFIGURATION.studyDurationMinutes * 60 * 1000;
+export const SHORT_BREAK_DURATION_MS =
+  DEFAULT_POMODORO_CONFIGURATION.shortBreakDurationMinutes * 60 * 1000;
+export const LONG_BREAK_DURATION_MS =
+  DEFAULT_POMODORO_CONFIGURATION.longBreakDurationMinutes * 60 * 1000;
 
 export type PomodoroPhase = "study" | "shortBreak" | "longBreak";
 
@@ -47,14 +55,17 @@ export function completePomodoroPhase(
   };
 }
 
-export function getPomodoroPhaseDurationMs(phase: PomodoroPhase): number {
+export function getPomodoroPhaseDurationMs(
+  phase: PomodoroPhase,
+  configuration: PomodoroConfiguration = DEFAULT_POMODORO_CONFIGURATION,
+): number {
   switch (phase) {
     case "study":
-      return STUDY_DURATION_MS;
+      return configuration.studyDurationMinutes * 60 * 1000;
     case "shortBreak":
-      return SHORT_BREAK_DURATION_MS;
+      return configuration.shortBreakDurationMinutes * 60 * 1000;
     case "longBreak":
-      return LONG_BREAK_DURATION_MS;
+      return configuration.longBreakDurationMinutes * 60 * 1000;
   }
 }
 

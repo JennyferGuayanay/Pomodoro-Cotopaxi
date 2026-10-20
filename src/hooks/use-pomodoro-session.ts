@@ -9,6 +9,7 @@ import {
   type PomodoroCycleState,
   type PomodoroPhase,
 } from '@/features/pomodoro-cycle/pomodoro-cycle-state';
+import { usePomodoroConfiguration } from '@/features/configuration/pomodoro-configuration-provider';
 import {
   createPersistedPomodoroState,
   createSafeInitialPomodoroState,
@@ -73,11 +74,13 @@ function logNotificationError(error: unknown): void {
 }
 
 export function usePomodoroSession() {
+  const configurationState = usePomodoroConfiguration();
   const [session, setSession] = useState(createInitialSessionState);
   const [isReady, setIsReady] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now);
   const isReadyRef = useRef(false);
   const sessionRef = useRef(session);
+  const configurationRef = useRef(configurationState.configuration);
   const writeQueue = useRef(Promise.resolve());
 
   useEffect(() => {
@@ -85,6 +88,12 @@ export function usePomodoroSession() {
   }, [session]);
 
   useEffect(() => {
+    configurationRef.current = configurationState.configuration;
+  }, [configurationState.configuration]);
+
+  useEffect(() => {
+    if (!configurationState.isReady) return;
+
     let isMounted = true;
 
     async function restoreSession() {
@@ -107,7 +116,7 @@ export function usePomodoroSession() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [configurationState.isReady]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -189,10 +198,18 @@ export function usePomodoroSession() {
         if (nextTimer === current.timer) return current;
 
         if (nextTimer.status === 'stopped' && nextTimer.remainingMs === 0) {
-          const nextCycle = completePomodoroPhase(current.cycle);
+          const nextCycle = completePomodoroPhase(
+            current.cycle,
+            configurationRef.current.pomodorosPerCycle,
+          );
           return {
             cycle: nextCycle,
-            timer: createTimerState(getPomodoroPhaseDurationMs(nextCycle.phase)),
+            timer: createTimerState(
+              getPomodoroPhaseDurationMs(
+                nextCycle.phase,
+                configurationRef.current,
+              ),
+            ),
             completedPhase: current.cycle.phase,
           };
         }
@@ -225,6 +242,9 @@ export function usePomodoroSession() {
 
   return {
     isReady,
+    configuration: configurationState.configuration,
+    configurationLoadError: configurationState.hasLoadError,
+    saveConfiguration: configurationState.saveConfiguration,
     cycle: session.cycle,
     phaseName: getPomodoroPhaseName(session.cycle.phase),
     progressLabel: formatPomodoroProgress(session.cycle),

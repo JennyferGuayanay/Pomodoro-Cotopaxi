@@ -1,10 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createElement, type PropsWithChildren } from 'react';
 import { act, renderHook } from '@testing-library/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { createPomodoroCycleState } from '@/features/pomodoro-cycle/pomodoro-cycle-state';
+import { PomodoroConfigurationProvider } from '@/features/configuration/pomodoro-configuration-provider';
+import {
+  POMODORO_CONFIGURATION_SCHEMA_VERSION,
+  POMODORO_CONFIGURATION_STORAGE_KEY,
+} from '@/features/persistence/pomodoro-configuration-storage';
 import {
   createPersistedPomodoroState,
+  POMODORO_STATE_STORAGE_KEY,
   savePomodoroState,
 } from '@/features/persistence/pomodoro-state-storage';
 import { reconcilePomodoroPhaseNotificationsAsync } from '@/features/notifications/pomodoro-phase-notification';
@@ -27,6 +34,10 @@ jest.mock('@/features/notifications/pomodoro-phase-notification', () => ({
 const mockReconcilePomodoroPhaseNotificationsAsync = jest.mocked(
   reconcilePomodoroPhaseNotificationsAsync,
 );
+
+function Wrapper({ children }: PropsWithChildren) {
+  return createElement(PomodoroConfigurationProvider, null, children);
+}
 
 describe('usePomodoroSession', () => {
   let appStateListener: ((state: AppStateStatus) => void) | undefined;
@@ -52,9 +63,17 @@ describe('usePomodoroSession', () => {
     jest.restoreAllMocks();
   });
 
-  async function renderReadySession(storedValue: string | null = null) {
-    jest.spyOn(AsyncStorage, 'getItem').mockResolvedValue(storedValue);
-    const hook = await renderHook(() => usePomodoroSession());
+  async function renderReadySession(
+    storedValue: string | null = null,
+    configurationValue: string | null = null,
+  ) {
+    jest.spyOn(AsyncStorage, 'getItem').mockImplementation(async (key) => {
+      if (key === POMODORO_CONFIGURATION_STORAGE_KEY) {
+        return configurationValue;
+      }
+      return key === POMODORO_STATE_STORAGE_KEY ? storedValue : null;
+    });
+    const hook = await renderHook(() => usePomodoroSession(), { wrapper: Wrapper });
     await act(async () => {
       await jest.advanceTimersByTimeAsync(0);
     });
@@ -80,14 +99,17 @@ describe('usePomodoroSession', () => {
       0,
     );
     let resolveStoredValue: ((value: string | null) => void) | undefined;
-    jest.spyOn(AsyncStorage, 'getItem').mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveStoredValue = resolve;
-        }),
-    );
+    jest.spyOn(AsyncStorage, 'getItem').mockImplementation((key) => {
+      if (key === POMODORO_CONFIGURATION_STORAGE_KEY) {
+        return Promise.resolve(null);
+      }
+      if (key !== POMODORO_STATE_STORAGE_KEY) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        resolveStoredValue = resolve;
+      });
+    });
 
-    const hook = await renderHook(() => usePomodoroSession());
+    const hook = await renderHook(() => usePomodoroSession(), { wrapper: Wrapper });
 
     expect(hook.result.current.isReady).toBe(false);
     expect(AsyncStorage.setItem).not.toHaveBeenCalled();
@@ -109,6 +131,167 @@ describe('usePomodoroSession', () => {
       expect.any(String),
       expect.stringContaining('"remainingMs":42000'),
     );
+  });
+
+  test('keeps a prepared phase unchanged and uses saved durations for the next phase', async () => {
+    const persisted = createPersistedPomodoroState(
+      createPomodoroCycleState(),
+      createTimerState(10_000),
+      0,
+    );
+    const hook = await renderReadySession(JSON.stringify(persisted));
+    const configuration = {
+      studyDurationMinutes: 2,
+      shortBreakDurationMinutes: 3,
+      longBreakDurationMinutes: 1,
+      pomodorosPerCycle: 4,
+    };
+
+    await act(async () => {
+      await hook.result.current.saveConfiguration(configuration);
+    });
+
+    expect(hook.result.current.timer.formattedTime).toBe('00:10');
+    expect(hook.result.current.timer.visibleStatus).toBe('stopped');
+
+    await act(async () => hook.result.current.timer.start());
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(10_000);
+    });
+
+    expect(hook.result.current.phaseName).toBe('Descanso corto');
+    expect(hook.result.current.timer.visibleStatus).toBe('stopped');
+    expect(hook.result.current.timer.formattedTime).toBe('03:00');
+  });
+
+  test('uses the locally restored duration when preparing a later phase', async () => {
+    const persisted = createPersistedPomodoroState(
+      {
+        phase: 'shortBreak',
+        completedPomodoros: 1,
+        targetPomodoros: 4,
+      },
+      createTimerState(10),
+      0,
+    );
+    const configuration = {
+      studyDurationMinutes: 20,
+      shortBreakDurationMinutes: 6,
+      longBreakDurationMinutes: 13,
+      pomodorosPerCycle: 5,
+    };
+    const hook = await renderReadySession(
+      JSON.stringify(persisted),
+      JSON.stringify({
+        schemaVersion: POMODORO_CONFIGURATION_SCHEMA_VERSION,
+        configuration,
+      }),
+    );
+
+    await act(async () => hook.result.current.timer.start());
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(250);
+    });
+
+    expect(hook.result.current.phaseName).toBe('Estudio');
+    expect(hook.result.current.progressLabel).toBe('Pomodoros completados: 1 de 4');
+    expect(hook.result.current.timer.visibleStatus).toBe('stopped');
+    expect(hook.result.current.timer.formattedTime).toBe('20:00');
+  });
+
+  test('keeps a paused phase duration and remaining time after a configuration save', async () => {
+    const persisted = createPersistedPomodoroState(
+      createPomodoroCycleState(),
+      {
+        status: 'paused',
+        durationMs: 10_000,
+        remainingMs: 4_000,
+      },
+      0,
+    );
+    const hook = await renderReadySession(JSON.stringify(persisted));
+
+    await act(async () => {
+      await hook.result.current.saveConfiguration({
+        studyDurationMinutes: 30,
+        shortBreakDurationMinutes: 7,
+        longBreakDurationMinutes: 20,
+        pomodorosPerCycle: 6,
+      });
+    });
+
+    expect(hook.result.current.timer.visibleStatus).toBe('paused');
+    expect(hook.result.current.timer.formattedTime).toBe('00:04');
+  });
+
+  test('keeps a running phase remaining time after a configuration save', async () => {
+    const persisted = createPersistedPomodoroState(
+      createPomodoroCycleState(),
+      {
+        status: 'running',
+        durationMs: 10_000,
+        endsAtMs: 10_000,
+      },
+      0,
+    );
+    const hook = await renderReadySession(JSON.stringify(persisted));
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(3_000);
+    });
+    expect(hook.result.current.timer.formattedTime).toBe('00:07');
+
+    await act(async () => {
+      await hook.result.current.saveConfiguration({
+        studyDurationMinutes: 30,
+        shortBreakDurationMinutes: 7,
+        longBreakDurationMinutes: 20,
+        pomodorosPerCycle: 6,
+      });
+    });
+
+    expect(hook.result.current.timer.visibleStatus).toBe('running');
+    expect(hook.result.current.timer.formattedTime).toBe('00:07');
+  });
+
+  test('keeps the current cycle size until the long break ends', async () => {
+    const persisted = createPersistedPomodoroState(
+      {
+        phase: 'study',
+        completedPomodoros: 3,
+        targetPomodoros: 4,
+      },
+      createTimerState(10),
+      0,
+    );
+    const hook = await renderReadySession(JSON.stringify(persisted));
+
+    await act(async () => {
+      await hook.result.current.saveConfiguration({
+        studyDurationMinutes: 2,
+        shortBreakDurationMinutes: 3,
+        longBreakDurationMinutes: 1,
+        pomodorosPerCycle: 2,
+      });
+    });
+    expect(hook.result.current.progressLabel).toBe('Pomodoros completados: 3 de 4');
+
+    await act(async () => hook.result.current.timer.start());
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(250);
+    });
+    expect(hook.result.current.phaseName).toBe('Descanso largo');
+    expect(hook.result.current.progressLabel).toBe('Pomodoros completados: 4 de 4');
+    expect(hook.result.current.timer.formattedTime).toBe('01:00');
+
+    await act(async () => hook.result.current.timer.start());
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(60_000);
+    });
+    expect(hook.result.current.phaseName).toBe('Estudio');
+    expect(hook.result.current.progressLabel).toBe('Pomodoros completados: 0 de 2');
+    expect(hook.result.current.timer.visibleStatus).toBe('stopped');
+    expect(hook.result.current.timer.formattedTime).toBe('02:00');
   });
 
   test('reconciles a running timer against its completion mark on foreground return', async () => {

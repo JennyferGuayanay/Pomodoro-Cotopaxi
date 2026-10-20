@@ -30,7 +30,9 @@ describe('configurePomodoroNotificationChannelAsync', () => {
     jest.mocked(setNotificationChannelAsync).mockResolvedValue(null);
   });
 
-  test('creates the Android phase channel with default sound and vibration', async () => {
+  test('creates a new Android phase channel using system sound and vibration', async () => {
+    expect(POMODORO_NOTIFICATION_CHANNEL_ID).toBe('pomodoro-phase-end-v2');
+
     await configurePomodoroNotificationChannelAsync();
 
     expect(setNotificationChannelAsync).toHaveBeenCalledWith(
@@ -39,10 +41,12 @@ describe('configurePomodoroNotificationChannelAsync', () => {
         name: 'Fin de fase',
         description: 'Avisos al finalizar una fase de Pomodoro.',
         importance: AndroidImportance.DEFAULT,
-        sound: 'default',
         enableVibrate: true,
       },
     );
+    expect(
+      jest.mocked(setNotificationChannelAsync).mock.calls[0]?.[1],
+    ).not.toHaveProperty('sound');
   });
 
   test('does not configure an Android channel on other platforms', async () => {

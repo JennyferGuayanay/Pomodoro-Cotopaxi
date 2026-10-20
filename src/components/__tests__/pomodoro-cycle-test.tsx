@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Alert, type AlertButton } from 'react-native';
 
 import { usePomodoroSession } from '@/hooks/use-pomodoro-session';
+import { DEFAULT_POMODORO_CONFIGURATION } from '@/features/configuration/pomodoro-configuration';
 import {
   getNotificationPermissionPromptStateAsync,
   requestPomodoroNotificationPermissionAsync,
@@ -28,6 +29,12 @@ const mockRequestPomodoroNotificationPermissionAsync = jest.mocked(
 
 const readySession = {
   isReady: true,
+  configuration: { ...DEFAULT_POMODORO_CONFIGURATION },
+  configurationLoadError: false,
+  saveConfiguration: jest.fn(async () => ({
+    status: 'saved' as const,
+    configuration: { ...DEFAULT_POMODORO_CONFIGURATION },
+  })),
   cycle: {
     phase: 'study' as const,
     completedPomodoros: 0,
@@ -82,6 +89,21 @@ describe('<PomodoroCycle />', () => {
 
     expect(screen.queryByRole('button', { name: 'Iniciar' })).not.toBeOnTheScreen();
     expect(screen.queryByLabelText(/Tiempo restante/)).not.toBeOnTheScreen();
+  });
+
+  test('reports a configuration read error without blocking the timer', async () => {
+    mockUsePomodoroSession.mockReturnValue({
+      ...readySession,
+      configurationLoadError: true,
+    });
+
+    await render(<PomodoroCycle />);
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Configuración no disponible',
+      'No se pudo leer la configuración guardada. Se usarán los valores predeterminados.',
+    );
+    expect(screen.getByRole('button', { name: 'Iniciar' })).toBeOnTheScreen();
   });
 
   test('does not expose controls to skip or select phases', async () => {

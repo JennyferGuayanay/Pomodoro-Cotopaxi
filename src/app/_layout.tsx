@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { PomodoroConfigurationProvider } from '@/features/configuration/pomodoro-configuration-provider';
 import { configurePomodoroNotificationChannelAsync } from '@/features/notifications/notification-channel';
 import { usePomodoroNotificationResponse } from '@/features/notifications/pomodoro-notification-response';
 
@@ -22,8 +23,10 @@ export default function TabLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
+      <PomodoroConfigurationProvider>
+        <AnimatedSplashOverlay />
+        <AppTabs />
+      </PomodoroConfigurationProvider>
     </ThemeProvider>
   );
 }

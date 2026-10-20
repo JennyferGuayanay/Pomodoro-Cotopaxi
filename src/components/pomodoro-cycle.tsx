@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 
 import { PomodoroTimerView } from '@/components/pomodoro-timer';
@@ -15,6 +15,22 @@ import { usePomodoroSession } from '@/hooks/use-pomodoro-session';
 export function PomodoroCycle() {
   const session = usePomodoroSession();
   const isStarting = useRef(false);
+  const hasShownConfigurationError = useRef(false);
+
+  useEffect(() => {
+    if (
+      !session.configurationLoadError ||
+      hasShownConfigurationError.current
+    ) {
+      return;
+    }
+
+    hasShownConfigurationError.current = true;
+    Alert.alert(
+      'Configuración no disponible',
+      'No se pudo leer la configuración guardada. Se usarán los valores predeterminados.',
+    );
+  }, [session.configurationLoadError]);
 
   if (!session.isReady) return null;
 

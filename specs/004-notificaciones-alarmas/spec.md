@@ -2,13 +2,13 @@
 
 ## Estado
 
-**Aprobación parcial.** Los requisitos definidos para la primera implementación reflejan decisiones autorizadas en esta revisión. El responsable autorizó la implementación de HU004-T01–T07 por separado y con pruebas, sin esperar a resolver SPEC-004-P01. El requisito original de alarma incluso con el celular en silencio, vibración y aviso en pantalla de bloqueo sigue pendiente de validación técnica. HU-004 no está completada ni aprobada globalmente.
+**Aprobación parcial.** Los requisitos definidos para la primera implementación reflejan decisiones autorizadas en esta revisión. El responsable autorizó la implementación de HU004-T01–T07 por separado y con pruebas, sin esperar a resolver SPEC-004-P01, y autorizó el 2026-10-20 el canal versionado con sonido normal del sistema y vibración. La exigencia de sonido incluso con el celular en silencio o No molestar y el aviso en pantalla de bloqueo siguen pendientes de validación técnica y aprobación. HU-004 no está completada ni aprobada globalmente.
 
 - Historia de usuario: `docs/historias/HU-004.md` (continúa en borrador).
 - Decisiones: `specs/004-notificaciones-alarmas/decisiones.md`.
 - Dependencias funcionales: HU-001, HU-002 y HU-003.
 - Constitución: `docs/constitution.md`.
-- La planificación parcial está registrada en `plan.md` y `tasks.md`. La implementación parcial de HU004-T01–T07 está autorizada tarea por tarea, con solicitud explícita y pruebas; HU004-T08 no está autorizada para implementación. Esta autorización no modifica el estado global de aprobación de la especificación ni de HU-004.
+- La planificación parcial está registrada en `plan.md` y `tasks.md`. HU004-T01–T07 están autorizadas tarea por tarea; HU004-T09 (canal versionado con sonido normal y vibración) fue autorizada explícitamente el 2026-10-20. HU004-T08 conserva la investigación pendiente para modo silencio/No molestar y pantalla bloqueada. Estas autorizaciones no modifican el estado global de aprobación de la especificación ni de HU-004.
 
 ## Objetivo y actor
 
@@ -19,7 +19,7 @@ Como estudiante de Academia Cotopaxi, quiero saber cuándo termina una fase de e
 - HU-001 rige la ejecución, pausa y reinicio del temporizador.
 - HU-002 procesa una sola finalización y prepara la siguiente fase sin iniciarla automáticamente.
 - HU-003 determina la recuperación durante bloqueo o cierre normal.
-- La primera implementación aprobada parcialmente usa una notificación local por fase con `expo-notifications`, entrega Android `bestEffort`, un canal con sonido predeterminado y vibración, y permisos normales de notificación.
+- La primera implementación aprobada parcialmente usa una notificación local por fase con `expo-notifications`, entrega Android `bestEffort`, el canal Android versionado `pomodoro-phase-end-v2` con sonido predeterminado del sistema (propiedad `sound` omitida) y vibración, y permisos normales de notificación.
 - Las notificaciones locales no dependen de conexión a Internet. La entrega puede retrasarse por Android o el fabricante.
 - La primera implementación debe cubrir bloqueo y cierre normal desde recientes, pero no promete avisos tras detención forzada.
 
@@ -57,7 +57,7 @@ Como estudiante de Academia Cotopaxi, quiero saber cuándo termina una fase de e
 ## Requisito original pendiente de validación técnica
 
 - **SPEC-004-P01 (pendiente; no aprobado como cumplido):** La solución deberá satisfacer el requisito original de que la alarma suene incluso con el celular en silencio, vibre y muestre un aviso en la pantalla de bloqueo.
-- La notificación estándar y el canal definidos para la primera implementación respetan los ajustes del usuario; el silencio puede suprimir el sonido y los ajustes de Android pueden limitar la visibilidad en pantalla de bloqueo. Por ello, el alcance aprobado parcialmente no demuestra ni garantiza SPEC-004-P01.
+- La implementación parcial autorizada emite el sonido normal del sistema y solicita vibración con un canal nuevo; no garantiza una alarma audible con el celular en modo silencio o No molestar. Los ajustes de Android también pueden silenciar el canal o limitar la visibilidad en pantalla de bloqueo. Por ello, esta implementación no demuestra ni satisface completamente SPEC-004-P01.
 - Se requiere investigar y validar por separado qué capacidades de Expo SDK 58 cubren este requisito y si hace falta implementación nativa adicional, qué permisos y restricciones implicaría y si la experiencia es compatible con los ajustes y políticas de Android.
 - No se debe eliminar, degradar ni declarar satisfecho este requisito mientras no exista evidencia técnica y aprobación explícita del responsable.
 
@@ -121,16 +121,25 @@ La compatibilidad base será la definida por Expo SDK 58. Esta especificación n
 **Cuando** se programa o entrega un aviso local,  
 **Entonces** no se requiere servicio remoto; si el usuario detiene forzosamente la aplicación, no se garantiza la entrega.
 
-### SPEC-004-CA09: Requisito original pendiente
+### SPEC-004-CA09: Requisito original parcialmente implementado y aún pendiente
 
 **Dado** que el requisito original exige sonido incluso en silencio, vibración y aviso en pantalla de bloqueo,  
 **Cuando** se evalúa el alcance aprobado parcialmente para la primera implementación,  
-**Entonces** se registra que esas garantías todavía no están verificadas ni cumplidas y se mantiene pendiente la investigación técnica, sin declarar HU-004 completada.
+**Entonces** se registra que el sonido normal del sistema y la vibración están implementados parcialmente, que el sonido en silencio/No molestar y la visibilidad en pantalla bloqueada dependen del sistema y no están garantizados, y que P01 no está aprobado como cumplido ni HU-004 completada.
+
+#### Resultado manual Android comunicado el 2026-10-20
+
+- **Modo normal:** aprobada únicamente la observación de fin de fase en un celular Android físico: la notificación apareció en la pantalla bloqueada, sonó y vibró.
+- **Modo silencio:** aprobada únicamente la observación de que la notificación apareció. No se reportó si fue visible en la pantalla bloqueada; no se observó sonido ni vibración. No satisface el requisito original de alarma audible y vibración en silencio.
+- **CA07:** evidencia positiva limitada a la presentación con pantalla bloqueada en modo normal. No se probó retirar la app de recientes ni se validó la entrega aproximada en otros dispositivos.
+- **CA09 / SPEC-004-P01:** no aprobada. La notificación apareció en modo silencio sin sonido ni vibración; el requisito combinado permanece pendiente.
+- **Alcance de la evidencia:** se informó Android físico, pero no modelo, versión de Android, versión/build instalada, estado detallado de permisos ni pasos de repetición. No se infiere cobertura para otros dispositivos o configuraciones.
 
 ## Estrategia de verificación preliminar
 
 - Pruebas deterministas de programación única, pausa, reanudación, solicitud/cancelación de reinicio, confirmación de reinicio y deduplicación.
 - Pruebas Android en un build de desarrollo y dispositivo físico para permiso concedido/denegado, canal, mensajes, apertura de la aplicación, bloqueo, cierre desde recientes y comportamiento offline.
+- Resultado parcial informado: modo normal con aviso, sonido y vibración en pantalla bloqueada; modo silencio con aviso visible pero sin sonido ni vibración. Ver la evidencia limitada de CA07/CA09 arriba y el registro de HU004-T07 en `tasks.md`.
 - Registrar retrasos observados con `bestEffort`; no tratarlos como garantía de puntualidad ni como prueba de SPEC-004-P01.
 - Validar el comportamiento tras detención forzada como limitación documentada, no como caso garantizado.
 - Diseñar pruebas específicas para SPEC-004-P01 solo después de determinar técnicamente las capacidades y permisos necesarios.
@@ -150,8 +159,8 @@ La compatibilidad base será la definida por Expo SDK 58. Esta especificación n
 ## Aprobación
 
 - Decisiones autorizadas para la primera implementación: Sí, parcialmente, según `decisiones.md`.
-- Requisito obligatorio de alarma incluso en silencio y aviso en pantalla de bloqueo: pendiente de validación técnica.
+- Requisito de alarma incluso en silencio/No molestar y aviso en pantalla de bloqueo: pendiente; no aprobado como cumplido.
 - Aprobación global de la especificación: Pendiente.
 - Estado de HU-004: no completada.
 - Implementación parcial: autorizada para HU004-T01–T07, por separado y con pruebas, según DEC-004-10 y `tasks.md`.
-- HU004-T08 / SPEC-004-P01: investigación pendiente; implementación no autorizada hasta decisión y autorización específicas posteriores.
+- HU004-T08 / SPEC-004-P01: investigación y validación restantes pendientes. DEC-004-11 autoriza únicamente el canal normal de sonido y vibración; no autoriza omitir silencio/No molestar ni declarar P01 cumplido.

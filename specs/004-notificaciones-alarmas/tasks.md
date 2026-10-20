@@ -2,7 +2,7 @@
 
 ## Estado y puerta de ejecución
 
-El responsable autorizó parcialmente la implementación de HU004-T01–T07 el 2026-10-19, por separado y con pruebas, mediante solicitud explícita para cada tarea (DEC-004-10). Esta autorización limitada no resuelve SPEC-004-P01, no aprueba globalmente la especificación ni permite declarar HU-004 completada. T01–T05 ya se abordaron por solicitudes anteriores; esta solicitud cubre T06 y T07. T01 aún conserva pendiente su validación en Android. Al iniciar HU004-T01, `expo-notifications` ya estaba instalada y declarada; no se reinstala por instrucción del responsable. HU004-T08 permanece bloqueada para implementación hasta tener evidencia técnica y decisión explícita sobre SPEC-004-P01; cualquier implementación de P01 requiere autorización específica.
+El responsable autorizó parcialmente la implementación de HU004-T01–T07 el 2026-10-19, por separado y con pruebas (DEC-004-10). El 2026-10-20 autorizó HU004-T09: canal versionado con sonido normal del sistema y vibración, sin permisos especiales (DEC-004-11). Estas autorizaciones no resuelven el sonido en modo silencio/No molestar ni la visibilidad garantizada en pantalla bloqueada; no aprueban globalmente la especificación ni permiten declarar HU-004 completada. T01 aún conserva pendiente validación en Android. `expo-notifications` ya está instalada; no se instalan dependencias. HU004-T08 conserva la investigación restante de SPEC-004-P01.
 
 **Dependencia común de T01–T07:** iniciar cada tarea solo tras la solicitud explícita del responsable y respetar su orden de dependencias. Las tareas que necesiten validar la integración nativa requieren un Android development build. Esta solicitud no autoriza instalación de dependencias, builds ni commits.
 
@@ -17,7 +17,8 @@ El responsable autorizó parcialmente la implementación de HU004-T01–T07 el 2
 | HU004-T05 | Usa respuestas a notificaciones con `expo-notifications` y navegación mediante Expo Router ya instalado; no requiere otra biblioteca nativa. |
 | HU004-T06 | Usa cancelación/reprogramación con `expo-notifications` y la integración de estado existente; no requiere otra biblioteca nativa. |
 | HU004-T07 | Requiere un development build y dispositivo Android físico para las pruebas; no añade una biblioteca. |
-| HU004-T08 | Capacidad nativa adicional no determinada. Se mantiene sin dependencia elegida ni autorizada hasta completar la investigación y obtener decisión explícita. |
+| HU004-T08 | Capacidad para modo silencio/No molestar y visibilidad garantizada no determinada. Investigación pendiente; no añadir permisos especiales sin autorización. |
+| HU004-T09 | Usa la API de canal ya instalada de `expo-notifications`; cambio de ID/argumentos en JavaScript, sin dependencia ni permiso adicional. |
 
 ## Alcance inicial técnicamente definido y autorizado por tareas
 
@@ -44,7 +45,7 @@ El responsable autorizó parcialmente la implementación de HU004-T01–T07 el 2
 - **Dependencia:** `npm ls expo-notifications expo --depth=0` confirmó ambas versiones; `npx expo install --check` informó `Dependencies are up to date`. No se instaló ni reinstaló ningún paquete.
 - **Configuración inicial:** `npx expo config --type prebuild --json` resolvió correctamente la configuración y mostró `expo-notifications` entre los módulos Android autolinked. El manifest Android del módulo declara `POST_NOTIFICATIONS` y `RECEIVE_BOOT_COMPLETED`; no declara acceso a alarmas exactas. No se configuraron push tokens ni servicios remotos.
 - **Actualización autorizada por el responsable (2026-10-19):** se hace explícito el config plugin en `app.json` con notificaciones remotas deshabilitadas (solo se requieren notificaciones locales). El módulo Android declara sus permisos mediante su propio manifest. La documentación de Expo SDK 58 reserva `defaultChannel` para notificaciones FCM; por tanto, el canal local no se define con esa opción del plugin.
-- **Canal Android preparado:** al iniciar la aplicación se crea el canal local `pomodoro-phase-end`, con sonido predeterminado e indicación de vibración, respetando los controles de Android. No se solicita permiso, no se crea un sonido/patrón personalizado ni se intenta omitir silencio o No molestar. Esta preparación responde a la instrucción explícita del responsable para T01; no marca HU004-T03 como cerrada ni valida el canal en un dispositivo.
+- **Canal Android original:** el canal `pomodoro-phase-end` se llegó a configurar con `sound: null`; Android conserva la configuración de un canal creado y el canal puede permanecer visible en ajustes. HU004-T09 cambia al ID `pomodoro-phase-end-v2`, omite la opción `sound` para usar el sonido del sistema según la API instalada y mantiene vibración. No crea sonido personalizado ni solicita permiso especial.
 - **Pruebas automatizadas de la ejecución inicial:** `npm test -- --runInBand`: 8 suites y 81 pruebas aprobadas. `npx tsc --noEmit`: aprobado sin errores.
 - **Pruebas de esta actualización:** `npm test -- --runInBand`: 9 suites y 82 pruebas aprobadas, incluida la prueba del canal local. `npx tsc --noEmit`: aprobado sin errores. `npx expo config --type prebuild --json`: configuración resuelta con el plugin `expo-notifications` y el autolinking Android. `npx expo-doctor`: 20/20 comprobaciones aprobadas.
 - **Lint:** ESLint enfocado en los tres archivos de código modificados: aprobado. `npx expo lint` continúa fallando solo por el diagnóstico preexistente `react-hooks/set-state-in-effect` en `src/hooks/use-color-scheme.web.ts:11`.
@@ -198,20 +199,28 @@ El responsable autorizó parcialmente la implementación de HU004-T01–T07 el 2
 
 #### Evidencia de ejecución
 
-- **Estado:** Regresión automatizada aprobada; T07 permanece incompleta hasta ejecutar y registrar las pruebas manuales en un Android físico.
+- **Estado:** Regresión automatizada aprobada; una parte de la prueba física se ejecutó y registró abajo. T07 permanece incompleta porque otros escenarios requeridos no se reportaron.
 - **Requisitos/criterios:** HU004-T07; SPEC-004-R05–R06 y R17–R20; CA01–CA08, excluyendo CA09/P01.
 - **Entorno automatizado:** Windows; Expo `58.0.16`; `expo-notifications` `58.1.5`. No se generó ni instaló un Android development build, conforme a la instrucción del responsable.
 - **Regresión:** `npm test -- --runInBand` — 12 suites y 116 pruebas aprobadas, incluidas pruebas existentes de temporizador, ciclo y persistencia; `npx tsc --noEmit` — aprobado sin errores.
 - **Lint:** `npx expo lint` no queda limpio por el diagnóstico preexistente `react-hooks/set-state-in-effect` en `src/hooks/use-color-scheme.web.ts:11`; no se detectaron errores de lint en los archivos de notificaciones/sesión modificados.
-- **Pruebas manuales Android pendientes:** registrar modelo, versión del SO y build; verificar permiso concedido y denegado (incluido Android 13+), canal y prevalencia de ajustes del usuario; comprobar ambos mensajes y el toque con la app activa, en segundo plano y tras cierre normal desde recientes; dejar vencer fases con pantalla bloqueada y retirada de recientes; repetir offline y anotar retrasos `bestEffort`. La validación de T01 (integración/build), T03 (canal), T04 (entrega local) y T05 (interacción) sigue pendiente en dispositivo.
+- **Pruebas manuales Android pendientes:** registrar modelo, versión del SO y build; verificar permiso concedido y denegado (incluido Android 13+), canal y prevalencia de ajustes del usuario; comprobar ambos mensajes y el toque con la app activa, en segundo plano y tras cierre normal desde recientes; repetir offline y anotar retrasos `bestEffort`. Los escenarios no reportados no se consideran aprobados. La validación restante de T01 (integración/build), T03 (canal), T04 (entrega local) y T05 (interacción) sigue pendiente.
 - **Limitaciones documentadas, no garantías probadas:** no prometer entrega tras detención forzada ni una hora exacta; Android, Doze, batería, permisos, canal y fabricante pueden modificar o retrasar la entrega.
-- **Requisito pendiente:** SPEC-004-P01/DEC-004-09 — alarma audible con el teléfono en silencio, vibración y aviso en pantalla de bloqueo — sigue pendiente de investigación y decisión; esta validación no lo cubre y HU-004 no se declara aprobada ni completada.
+- **Requisito pendiente:** SPEC-004-P01/DEC-004-09 — alarma audible y vibración en modo silencio/No molestar — sigue sin cumplirse ni aprobarse. La aparición de la notificación en pantalla bloqueada fue observada en las pruebas informadas, pero no se convierte en garantía general ni valida el requisito combinado.
+
+#### Resultado de prueba física comunicado por el responsable (2026-10-20)
+
+- **Entorno conocido:** un celular Android físico. No se proporcionaron modelo, versión Android, número de build, configuración detallada del permiso/canal ni secuencia reproducible; esos datos quedan sin registrar, no asumidos.
+- **Modo normal:** **aprobada para esta ejecución únicamente** la observación reportada: al terminar la fase con la pantalla bloqueada, apareció la notificación, sonó y vibró.
+- **Modo silencio:** **aprobada para esta ejecución únicamente** la observación de que apareció la notificación. No se especificó si apareció en la pantalla bloqueada; no se observó sonido ni vibración, resultado negativo respecto de la exigencia original.
+- **Aprobaciones limitadas:** la presentación en pantalla bloqueada, el sonido y la vibración se observaron solo en modo normal. En modo silencio se observó únicamente la aparición de la notificación y la ausencia de sonido/vibración. No se marca como aprobada ninguna prueba de cierre desde recientes, modo offline, permisos denegados, mensajes/toque, entrega puntual ni otros dispositivos.
+- **Estado de aceptación:** esta evidencia no completa T07 ni HU-004. CA09/SPEC-004-P01 permanece explícitamente pendiente de investigación, decisión y validación; no se modifica el permiso, el canal ni los ajustes del dispositivo.
 
 ## Requisito obligatorio pendiente de decisión/capacidad
 
 ### HU004-T08 — Investigar y resolver SPEC-004-P01: alarma en silencio y pantalla de bloqueo
 
-- **Estado:** investigación reservada; implementación bloqueada hasta tener evidencia técnica y decisión y autorización explícitas. El requisito no está aprobado como cumplido.
+- **Estado:** investigación/validación restantes pendientes. HU004-T09 implementa sonido normal del sistema y vibración; P01 no está aprobado como cumplido.
 - **Alcance:** fuera de la primera implementación hasta que exista evidencia técnica y decisión explícita del responsable. La tarea reserva la investigación y la validación; no autoriza por sí sola una capacidad que omita ajustes de Android/usuario.
 - **Requisito:** SPEC-004-P01 y DEC-004-09.
 - **Criterio:** CA09; debe permanecer pendiente hasta completar las fases y aprobaciones requeridas.
@@ -224,3 +233,27 @@ El responsable autorizó parcialmente la implementación de HU004-T01–T07 el 2
   4. Solo después de autorización específica, implementar la opción aceptada y validar sonido en silencio, vibración y presentación en pantalla de bloqueo en los dispositivos/estados aprobados.
 - **Pruebas/evidencia:** matriz de capacidades por versión/plataforma y fuente oficial; prueba física para cada garantía autorizada y cada estado relevante; registro explícito de limitaciones o resultados negativos.
 - **Hecho cuando:** la investigación tiene evidencia y decisión registrada; si se autoriza implementación, cada parte de P01 tiene prueba verificable y aceptación explícita. Hasta entonces la tarea permanece bloqueada/incompleta y HU-004 no puede declararse completada.
+
+### HU004-T09 — Usar sonido normal del sistema y canal versionado
+
+- **Estado:** Implementada; Jest y TypeScript aprobados el 2026-10-20. Lint global conserva un error preexistente. Resultado físico parcial registrado en HU004-T07; SPEC-004-P01 continúa pendiente.
+- **Autorización:** Solicitud explícita del responsable del 2026-10-20 (DEC-004-11).
+- **Requisitos/criterios:** SPEC-004-R05–R06; alcance parcial de SPEC-004-P01; CA02 y CA09.
+- **Cambios:** Actualizar el ID del canal a `pomodoro-phase-end-v2`, omitir `sound` en `setNotificationChannelAsync` (la API instalada usa el sonido predeterminado del sistema cuando se omite) y mantener `enableVibrate: true`. La prueba comprueba el nuevo ID y que no se pasa una opción de sonido personalizado.
+- **Restricciones:** No usar `sound: 'default'`, añadir archivos de sonido, dependencias ni permisos especiales. No cambiar el sonido en modo silencio/No molestar ni prometer vibración/visibilidad si el sistema o el usuario las suprimen. P01 permanece sin aprobación.
+- **Pruebas/evidencia:** `npm test -- --runInBand` — 17 suites/158 pruebas aprobadas tras añadir el harness temporal; `npx tsc --noEmit` — aprobado sin errores; `npx expo lint` — falla por diagnóstico preexistente `react-hooks/set-state-in-effect` en `src/hooks/use-color-scheme.web.ts:11`, archivo sin cambios. La validación manual parcial está registrada en HU004-T07. Modo silencio/No molestar no se declara aprobado para sonido ni vibración.
+- **APK:** El canal se configura en runtime y no cambió código nativo, plugin ni manifiesto. Como el proyecto no incluye `expo-updates`, un APK de distribución ya instalado no recibe el JavaScript nuevo: para probar en ese APK de producción hay que generar e instalar otro APK. No hace falta regenerar el proyecto nativo para cambiar la opción del canal; un development build ya instalado puede probar la actualización cargando el JavaScript desde Metro.
+
+### Harness temporal de prueba HU-004 — fase de estudio de 10 segundos
+
+- **Estado:** Retirado el 2026-10-20 antes de preparar el APK Preview final. No forma parte del comportamiento de producción ni cambia la especificación funcional de HU-004.
+- **Autorización:** Excepción limitada autorizada explícitamente por el responsable el 2026-10-20, aunque HU-004 siga en borrador. Se limita a un harness temporal e aislado para validar avisos y no autoriza cambios de producto, permisos adicionales ni la resolución de SPEC-004-P01.
+- **Aislamiento:** El perfil EAS `hu004-test` hereda el development APK y define `EXPO_PUBLIC_HU004_TEST_MODE=1`. `app.config.js` cambia nombre e identificador Android a `com.jennyferg.PomodoroCotopaxi.hu004test`; los datos y notificaciones pertenecen a otra instalación. En modo de prueba la sesión se inicia limpia con 10 segundos, no lee ni escribe la sesión persistida y el flag solo surte efecto con `__DEV__`. La configuración predeterminada de estudio continúa en 25 minutos.
+- **Protección de release:** `app.config.js` rechaza el flag en perfiles EAS que no sean `development` o `hu004-test`. Los perfiles `preview` y `production` conservan el identificador de producción cuando se ejecutan sin el flag.
+- **Archivos:** `eas.json`, `app.config.js`, `src/features/testing/hu004-test-mode.ts`, `src/hooks/use-pomodoro-session.ts` y `src/hooks/__tests__/use-pomodoro-session-test.ts`.
+- **Evidencia automatizada histórica:** antes de retirar el harness, `npm test -- --runInBand` — 17 suites y 158 pruebas aprobadas; `npx tsc --noEmit` — aprobado; ESLint enfocado en los archivos del harness/sesión — aprobado. Se conserva este resultado histórico.
+- **Validación de configuración:** `npx expo config --type public --json` confirmó el nombre de prueba y paquete `.hu004test` con el flag, y el nombre/paquete de producción sin él. El flag con un perfil EAS no-development se rechazó como esperado.
+- **Evidencia física:** prueba manual parcial comunicada el 2026-10-20; consultar HU004-T07. No completar con supuestos los campos del modelo, versión del sistema o build que no fueron proporcionados.
+- **Retirada ejecutada:** se eliminó el perfil EAS `hu004-test`, la configuración dinámica `app.config.js`, el selector `src/features/testing/hu004-test-mode.ts`, la lógica condicional de `src/hooks/use-pomodoro-session.ts` y la prueba específica del modo temporal en `src/hooks/__tests__/use-pomodoro-session-test.ts`. Se mantiene el arranque y persistencia normales de sesión.
+- **Validación posterior a la retirada:** `npm test -- --runInBand` — 17 suites y 157 pruebas aprobadas; la prueba eliminada era únicamente la del harness temporal. `npx tsc --noEmit` — aprobado sin errores. `npx expo config --type public --json` resolvió la configuración estática de producción con el paquete normal `com.jennyferg.PomodoroCotopaxi`.
+- **APK Preview:** `eas.json` conserva `preview.distribution: "internal"` y `preview.android.buildType: "apk"`; no activa `developmentClient`. El APK Preview es instalable y autónomo, no requiere Metro. No se ejecutó EAS Build.
