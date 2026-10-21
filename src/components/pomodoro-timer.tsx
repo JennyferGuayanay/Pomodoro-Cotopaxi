@@ -32,6 +32,7 @@ type TimerButtonProps = {
 
 function TimerButton({ label, onPress }: TimerButtonProps) {
   const theme = useTheme();
+  const isSecondary = label === 'Reiniciar';
 
   return (
     <Pressable
@@ -40,10 +41,22 @@ function TimerButton({ label, onPress }: TimerButtonProps) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: theme.backgroundSelected },
+        isSecondary
+          ? {
+              backgroundColor: theme.backgroundElement,
+              borderColor: theme.primary,
+            }
+          : { backgroundColor: theme.primaryDark },
+        isSecondary && styles.secondaryButton,
         pressed && styles.buttonPressed,
       ]}>
-      <ThemedText style={styles.buttonText}>{label}</ThemedText>
+      <ThemedText
+        style={[
+          styles.buttonText,
+          { color: isSecondary ? theme.primaryDark : theme.onPrimary },
+        ]}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -84,7 +97,10 @@ export function PomodoroTimerView({
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="smallBold" accessibilityLabel={`Estado: ${statusLabel}`}>
+      <ThemedText
+        type="smallBold"
+        themeColor="textSecondary"
+        accessibilityLabel={`Estado: ${statusLabel}`}>
         Estado: {statusLabel}
       </ThemedText>
 
@@ -141,6 +157,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  secondaryButton: {
+    borderWidth: 1,
   },
   buttonPressed: {
     opacity: 0.7,

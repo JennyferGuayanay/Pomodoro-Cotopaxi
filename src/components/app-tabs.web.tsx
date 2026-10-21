@@ -37,7 +37,9 @@ export function TabButton({ children, isFocused, ref: _ref, ...props }: TabTrigg
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+        <ThemedText
+          type="small"
+          themeColor={isFocused ? 'primaryDark' : 'textSecondary'}>
           {children}
         </ThemedText>
       </ThemedView>
@@ -49,8 +51,11 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
+        <ThemedText
+          type="smallBold"
+          themeColor="primaryDark"
+          style={styles.brandText}>
+          Pomodoro Cotopaxi
         </ThemedText>
 
         {props.children}

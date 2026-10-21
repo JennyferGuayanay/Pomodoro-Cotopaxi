@@ -15,7 +15,9 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.header}>
-          <ThemedText type="smallBold">Pomodoro Cotopaxi</ThemedText>
+          <ThemedText type="smallBold" themeColor="primaryDark">
+            Pomodoro Cotopaxi
+          </ThemedText>
           <Link href="./settings" asChild>
             <Pressable
               accessibilityRole="button"
@@ -25,7 +27,9 @@ export default function HomeScreen() {
                 { backgroundColor: theme.backgroundSelected },
                 pressed && styles.buttonPressed,
               ]}>
-              <ThemedText type="smallBold">Configuración</ThemedText>
+              <ThemedText type="smallBold" themeColor="primaryDark">
+                Configuración
+              </ThemedText>
             </Pressable>
           </Link>
         </ThemedView>

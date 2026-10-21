@@ -103,11 +103,13 @@ export function PomodoroCycle() {
         <ThemedText
           type="subtitle"
           accessibilityLabel={`Fase actual: ${session.phaseName}`}
+          themeColor="primaryDark"
           style={styles.phase}>
           {session.phaseName}
         </ThemedText>
         <ThemedText
           accessibilityLabel={session.progressLabel}
+          themeColor="textSecondary"
           style={styles.progress}>
           {session.progressLabel}
         </ThemedText>

@@ -64,7 +64,9 @@ export function PomodoroConfigurationScreen() {
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}>
-          <ThemedText type="subtitle">Configuración</ThemedText>
+          <ThemedText type="subtitle" themeColor="primaryDark">
+            Configuración
+          </ThemedText>
           <ThemedText themeColor="textSecondary">
             Ajusta las duraciones y la cantidad de Pomodoros de cada ciclo.
           </ThemedText>
@@ -193,7 +195,7 @@ function PomodoroConfigurationForm({
   }
 
   return (
-    <ThemedView style={styles.form}>
+    <ThemedView type="backgroundElement" style={styles.form}>
       {CONFIGURATION_FIELDS.map((field) => {
         const label = FIELD_LABELS[field];
         const error = invalidFields.includes(field)
@@ -213,7 +215,8 @@ function PomodoroConfigurationForm({
               style={[
                 styles.input,
                 {
-                  borderColor: theme.textSecondary,
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.primary,
                   color: theme.text,
                 },
               ]}
@@ -245,11 +248,13 @@ function PomodoroConfigurationForm({
         onPress={() => void saveDraft()}
         style={({ pressed }) => [
           styles.actionButton,
-          { backgroundColor: theme.backgroundSelected },
+          { backgroundColor: theme.primaryDark },
           pressed && styles.buttonPressed,
           isSaving && styles.buttonDisabled,
         ]}>
-        <ThemedText type="smallBold">Guardar</ThemedText>
+        <ThemedText type="smallBold" themeColor="onPrimary">
+          Guardar
+        </ThemedText>
       </Pressable>
 
       <Pressable
@@ -259,12 +264,17 @@ function PomodoroConfigurationForm({
         onPress={requestRestoreDefaults}
         style={({ pressed }) => [
           styles.actionButton,
-          { borderColor: theme.textSecondary },
+          {
+            backgroundColor: theme.backgroundElement,
+            borderColor: theme.primary,
+          },
           styles.secondaryButton,
           pressed && styles.buttonPressed,
           isSaving && styles.buttonDisabled,
         ]}>
-        <ThemedText type="smallBold">Restaurar predeterminados</ThemedText>
+        <ThemedText type="smallBold" themeColor="primaryDark">
+          Restaurar predeterminados
+        </ThemedText>
       </Pressable>
     </ThemedView>
   );
@@ -287,6 +297,8 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: Spacing.three,
+    borderRadius: Spacing.four,
+    padding: Spacing.four,
   },
   field: {
     gap: Spacing.one,
